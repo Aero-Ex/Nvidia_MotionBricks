@@ -13,28 +13,14 @@ MotionBricks is a real-time generative framework that transforms interactive mot
 
 ## Contents
 
-- [News & Roadmap](#news--roadmap)
 - [Results](#results)
 - [Setup](#setup)
 - [Interactive Demo: Quick Start](#interactive-demo-quick-start)
-- [Training](#training)
-- [Motion Representation and Custom Datasets](#motion-representation-and-custom-datasets)
-- [Related Work](#related-work)
 - [Project Structure](#project-structure)
 - [Known Issues](#known-issues)
 - [Citation](#citation)
 - [License](#license)
 - [Contact](#contact)
-
-## News & Roadmap
-
-### News
-
-- **2026-04-27** — Initial public release: interactive demo, pretrained checkpoints (VQVAE · pose · root), synthetic training code, motion-representation docs, and GIF gallery.
-
-### Roadmap
-
-- [ ] Full training pipeline inside [GR00T Whole-Body Control](https://github.com/NVlabs/GR00T-WholeBodyControl)'s GEAR-SONIC pipeline — targeted for approximately one month out; reproducibility experiments are already in flight.
 
 ## Results
 
@@ -74,43 +60,14 @@ See the [project page](https://nvlabs.github.io/motionbricks) for the full uncut
 
 ## Setup
 
-**Requirements:** Python 3.10+, a CUDA-capable GPU, [Git LFS](https://git-lfs.com/).
+**Requirements:** Python 3.10+, a CUDA-capable GPU
 
 ### Clone the repository
 
-MotionBricks ships as a subproject of [GR00T Whole-Body Control](https://github.com/NVlabs/GR00T-WholeBodyControl). Clone the parent repo and `cd` into `motionbricks/`. Pretrained checkpoints, mesh assets, and gallery GIFs are tracked with Git LFS, so install LFS before cloning:
-
 ```bash
-git lfs install
+git clone https://github.com/Aero-Ex/Nvidia_MotionBricks.git
+cd Nvidia_MotionBricks/
 ```
-
-The parent repo skips MotionBricks pretrained checkpoints by default so a normal monorepo clone does not automatically download the extra ~2.2 GB of checkpoint files. MotionBricks GIFs and mesh assets still download normally. If you only need source code (for example, to train on your own data), clone normally:
-
-```bash
-git clone https://github.com/NVlabs/GR00T-WholeBodyControl.git
-cd GR00T-WholeBodyControl/motionbricks
-```
-
-If you want the checkpoints for the interactive demo, fetch them explicitly from the repo root:
-
-```bash
-git clone https://github.com/NVlabs/GR00T-WholeBodyControl.git
-cd GR00T-WholeBodyControl
-git lfs pull --include="motionbricks/out/**" --exclude=""
-git lfs pull --include="motionbricks/assets/skeletons/g1/meshes/**" --exclude=""  # needed for interactive demo
-cd motionbricks
-```
-
-After fetching MotionBricks checkpoints, verify that checkpoint files were downloaded (not tiny Git LFS pointer files):
-
-```bash
-ls -lh out/G1-clip.ckpt                                     # ~7.5 MB
-ls -lh out/motionbricks_vqvae/version_1/checkpoints/*.ckpt  # ~273 MB
-ls -lh out/motionbricks_pose/version_1/checkpoints/*.ckpt   # ~1.6 GB
-ls -lh out/motionbricks_root/version_1/checkpoints/*.ckpt   # ~391 MB
-```
-
-If these files are unexpectedly small (around 1 KB), they are LFS pointers. From the repo root, run `git lfs pull --include="motionbricks/out/**" --exclude=""` to fetch the actual checkpoints.
 
 
 ### Install dependencies
@@ -125,6 +82,12 @@ pip install -e .
 
 # Linux only: needed for keyboard input and MuJoCo key-grab workaround
 pip install pynput python-xlib
+
+# install huggingface_hub
+pip install -U transformers==5.1.0
+
+# download the pretrained weights
+python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='Aero-Ex/NV_MotionBricks', local_dir='./out')"
 ```
 
 ## Interactive Demo: Quick Start
@@ -170,66 +133,6 @@ Note: crawling modes (`Z` hand crawling and `B` elbow crawling) currently do not
 
 Without pressing a style key, the default locomotion is: **idle** (no movement keys), **walk** (WASD pressed).
 
-## Training
-
-Training scripts are provided for all three model components. The scripts use synthetic data by default and load model configs from the saved checkpoints in `out/`. The full motion datasets are available at <https://bones.studio/datasets>.
-
-**Full release status:** A full release — a model fully embedded in [GR00T whole-body control](https://github.com/NVlabs/GR00T-WholeBodyControl)'s robotics formulation, along with the complete training pipeline — is targeted for approximately one month out. Reproducibility experiments are already in flight; please check back for updates.
-
-```bash
-# Train the VQVAE (motion tokenizer)
-python scripts/train_vqvae.py
-
-# Train the pose model (requires pretrained VQVAE checkpoint)
-python scripts/train_pose.py
-
-# Train the root model (no VQVAE needed)
-python scripts/train_root.py
-```
-
-### Dataset
-
-The datasets used to train the pretrained checkpoints can be downloaded at <https://bones.studio/datasets>. All current training scripts default to **synthetic data** (see `motionbricks/data/synthetic_dataset.py`) so that the full training pipeline can be verified end-to-end without the real dataset.
-
-## Motion Representation and Custom Datasets
-
-For details on the motion feature representation, skeleton system, coordinate conventions, normalization, and feature computation pipeline, see [docs/motion_representation.md](docs/motion_representation.md).
-
-For a step-by-step guide to training MotionBricks on your own motion data and adapting it to a new robot, see [docs/adding_your_own_dataset.md](docs/adding_your_own_dataset.md).
-
-## Related Work
-
-**Kimodo** — A sibling project focused on offline motion generation, complementary to MotionBricks' real-time runtime.
-
-[Project page](https://research.nvidia.com/labs/sil/projects/kimodo/) · [GitHub](https://github.com/nv-tlabs/kimodo)
-
-<p align="center">
-  <img src="assets/gifs/kimodo_teaser.gif" alt="Kimodo teaser" width="480">
-</p>
-
-**GEAR-SONIC** — Together with MotionBricks, GEAR-SONIC anchors NVIDIA's GR00T Whole-Body Control initiative.
-
-[Project page](https://nvlabs.github.io/GEAR-SONIC/) · [GitHub](https://github.com/NVlabs/GR00T-WholeBodyControl)
-
-<p align="center">
-  <img src="assets/gifs/sonic_teaser.gif" alt="GEAR-SONIC teaser" width="480">
-</p>
-
-**BONES-SEED Dataset** — MotionBricks' training corpus — 350k production-grade mocap clips from real human actors and actresses.
-
-[Dataset page](https://huggingface.co/datasets/bones-studio/seed)
-
-<p align="center">
-  <img src="assets/gifs/bones_seed_teaser.gif" alt="BONES-SEED teaser" width="480">
-</p>
-
-**SOMA Retargeter** — The Newton-based solver that retargets SOMA capture onto the G1, producing MotionBricks' training data.
-
-[GitHub](https://github.com/NVIDIA/soma-retargeter)
-
-<p align="center">
-  <img src="assets/gifs/soma_retargeter_teaser.gif" alt="SOMA Retargeter teaser" width="480">
-</p>
 
 ## Project Structure
 
